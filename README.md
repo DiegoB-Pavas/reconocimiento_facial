@@ -22,7 +22,7 @@ pip install -r requirements.txt
 cd reconocimientofacial
 python app.py
 ```
-La API estará disponible en: `http://localhost:5000`
+La API estará disponible en: `http://localhost:5048`
 
 ---
 
@@ -57,31 +57,14 @@ Dado que usas **PM2**, puedes usarlo para gestionar este backend de Python. Aseg
 pm2 start process.json
 ```
 
-### 4. Configurar Nginx como Proxy Inverso
-En CentOS, el archivo de configuración principal suele estar en `/etc/nginx/nginx.conf` o en `/etc/nginx/conf.d/*.conf`.
-
-Crea un archivo de configuración para tu sitio:
-```bash
-sudo vi /etc/nginx/conf.d/asistencia_facial.conf
-```
-
-Añade lo siguiente:
-```nginx
-server {
-    listen 80;
-    server_name tu-dominio.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_set_header Host $host;
+    location /asistenciafac-api/ {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-NginX-Proxy true;
+        proxy_pass http://127.0.0.1:5048/api/;
+        proxy_redirect off;
     }
-
-    client_max_body_size 10M;
-}
-```
 
 Reinicia Nginx y asegúrate de que el firewall permita el tráfico HTTP/HTTPS:
 ```bash

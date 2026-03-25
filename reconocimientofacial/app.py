@@ -386,7 +386,7 @@ if __name__ == '__main__':
     print("\n  ╔══════════════════════════════════════╗")
     print("  ║   Sistema de Asistencia Facial       ║")
     print("  ║   Backend API + MySQL                ║")
-    print("  ║   Abrir: http://localhost:5000       ║")
+    print("  ║   Abrir: http://localhost:5048       ║")
     print("  ╚══════════════════════════════════════╝\n")
 
     app.run(
