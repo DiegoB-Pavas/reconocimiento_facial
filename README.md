@@ -26,15 +26,16 @@ La API estará disponible en: `http://localhost:5000`
 
 ---
 
-## 🌐 Despliegue en Hostinger (VPS con Nginx)
+## 🌐 Despliegue en VPS (CentOS 9 Stream)
 
-Para desplegar este proyecto en un VPS de Hostinger con Ubuntu/Debian, sigue estos pasos:
+Para desplegar este proyecto en un VPS con **CentOS 9 Stream**, sigue estos pasos:
 
 ### 1. Preparar el Entorno
-Actualiza el sistema e instala las dependencias de Python y OpenCV:
+Actualiza el sistema e instala las dependencias necesarias de Python, compilación y OpenCV:
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3-pip python3-venv libgl1-mesa-glx libglib2.0-0 -y
+sudo dnf update -y
+sudo dnf install python3 python3-devel gcc gcc-c++ -y
+sudo dnf install mesa-libGL glib2 -y
 ```
 
 ### 2. Clonar y Configurar
@@ -50,50 +51,49 @@ pip install gunicorn
 ```
 
 ### 3. Gestionar con PM2
-Dado que usas **PM2** para tus apps de Node/React, también puedes usarlo para gestionar este backend de Python con Gunicorn:
+Dado que usas **PM2**, puedes usarlo para gestionar este backend de Python. Asegúrate de tener instalado PM2 globalmente:
 
 ```bash
-pm2 start "venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app" --name asistencia-facial
+pm2 start process.json
 ```
-
-O mejor aún, usando un archivo `ecosystem.config.js` para persistencia:
-
-```javascript
-module.exports = {
-  apps: [{
-    name: "asistencia-facial",
-    script: "venv/bin/gunicorn",
-    args: "--workers 3 --bind 0.0.0.0:5000 app:app",
-    cwd: "/var/www/reconocimiento_facial/reconocimientofacial",
-    interpreter: "none"
-  }]
-}
-```
-
-Luego inicia con: `pm2 start ecosystem.config.js`.
 
 ### 4. Configurar Nginx como Proxy Inverso
-Asegúrate de que Nginx apunte al puerto 5000 (o al que hayas configurado en PM2):
+En CentOS, el archivo de configuración principal suele estar en `/etc/nginx/nginx.conf` o en `/etc/nginx/conf.d/*.conf`.
 
+Crea un archivo de configuración para tu sitio:
+```bash
+sudo vi /etc/nginx/conf.d/asistencia_facial.conf
+```
+
+Añade lo siguiente:
 ```nginx
 server {
     listen 80;
     server_name tu-dominio.com;
 
     location / {
-        include proxy_params;
         proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     client_max_body_size 10M;
 }
 ```
 
-Reinicia Nginx:
+Reinicia Nginx y asegúrate de que el firewall permita el tráfico HTTP/HTTPS:
 ```bash
 sudo nginx -t
 sudo systemctl restart nginx
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --reload
 ```
+
+> [!IMPORTANT]
+> En CentOS, es posible que **SELinux** bloquee las conexiones del proxy inverso. Si recibes un error 502, ejecuta:
+> `sudo setsebool -P httpd_can_network_connect 1`
 
 ---
 
