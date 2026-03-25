@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# Modelos (Git LFS no es necesario si se ignoran)
+reconocimientofacial/modelos/*.yml
+
+# Logs y otros
+*.log
