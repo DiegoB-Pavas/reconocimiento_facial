@@ -39,7 +39,7 @@ sudo dnf install mesa-libGL glib2 -y
 ```
 
 ### 2. Clonar y Configurar
-Clona el repositorio en `/var/www/reconocimiento-facial`:
+Clona el repositorio en `/var/www/reconocimiento_facial`:
 ```bash
 cd /var/www
 git clone https://github.com/tu-usuario/reconocimiento_facial.git
@@ -53,8 +53,19 @@ pip install gunicorn
 ### 3. Gestionar con PM2
 Dado que usas **PM2**, puedes usarlo para gestionar este backend de Python. Asegúrate de tener instalado PM2 globalmente:
 
+> [!IMPORTANT]
+> El archivo `process.json` se encuentra dentro de la subcarpeta `reconocimientofacial/`. Debes estar en ese directorio antes de ejecutar PM2.
+
 ```bash
+# Asegúrate de estar en el directorio correcto
+cd /var/www/reconocimiento_facial/reconocimientofacial
+
+# Iniciar con PM2
 pm2 start process.json
+
+# Guardar el proceso para que arranque automáticamente al reiniciar el servidor
+pm2 save
+pm2 startup
 ```
 
     location /asistenciafac-api/ {
