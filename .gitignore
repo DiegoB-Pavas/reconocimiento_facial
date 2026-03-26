@@ -10,3 +10,11 @@ reconocimientofacial/modelos/*.yml
 
 # Logs y otros
 *.log
+.env
+.env.example
+.env.production
+.env.development
+.env.test
+.env.local
+
+process.json
