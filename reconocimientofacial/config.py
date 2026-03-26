@@ -1,12 +1,17 @@
 # config.py - Configuración de la aplicación
 import os
 
-# Configuración MySQL
+from dotenv import load_dotenv
+
+# Carga las variables de entorno desde un archivo .env si existe
+load_dotenv()
+
+# Configuración MySQL (usa variables de entorno o valores por defecto)
 MYSQL_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '1234',
-    'database': 'bdcsurhorario'
+    'host': os.environ.get('DB_HOST', 'www.pavastecnologia.com'),
+    'user': os.environ.get('DB_USER', 'usrpavashtg'),
+    'password': os.environ.get('DB_PASSWORD', '9A12)WHFy$2p4v4s'),
+    'database': os.environ.get('DB_NAME', 'bdcsurhorario')
 }
 
 # Rutas de directorios

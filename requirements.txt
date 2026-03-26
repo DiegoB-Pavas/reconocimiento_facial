@@ -1,4 +1,14 @@
 flask>=3.1
+flask-cors==4.0.0
+gunicorn==23.0.0
 opencv-contrib-python>=4.10
 imutils>=0.5.4
 numpy>=2.0
+
+# Base de datos
+mysql-connector-python==8.4.0
+
+# Procesamiento de imágenes / reconocimiento
+opencv-contrib-python==4.10.0.84
+numpy==1.26.4
+python-dotenv
