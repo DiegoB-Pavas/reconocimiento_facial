@@ -6,12 +6,12 @@ from dotenv import load_dotenv
 # Carga las variables de entorno desde un archivo .env si existe
 load_dotenv()
 
-# Configuración MySQL (usa variables de entorno o valores por defecto)
+# Configuración MySQL (estrictamente por variables de entorno)
 MYSQL_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'www.pavastecnologia.com'),
-    'user': os.environ.get('DB_USER', 'usrpavashtg'),
-    'password': os.environ.get('DB_PASSWORD', '9A12)WHFy$2p4v4s'),
-    'database': os.environ.get('DB_NAME', 'bdcsurhorario')
+    'host': os.environ.get('DB_HOST'),
+    'user': os.environ.get('DB_USER'),
+    'password': os.environ.get('DB_PASSWORD'),
+    'database': os.environ.get('DB_NAME')
 }
 
 # Rutas de directorios
