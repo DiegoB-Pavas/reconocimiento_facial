@@ -38,19 +38,33 @@ sudo dnf install python3 python3-devel gcc gcc-c++ -y
 sudo dnf install mesa-libGL glib2 -y
 ```
 
-### 2. Clonar y Configurar
-Clona el repositorio en `/var/www/reconocimiento_facial`:
+### 2. Clonar el repositorio
+Clona el repositorio en la carpeta de tu dominio web:
 ```bash
-cd /var/www
+cd /var/www/pavastecnologia.com/html
 git clone https://github.com/tu-usuario/reconocimiento_facial.git
+```
+
+### 3. Configurar el Entorno Virtual y Dependencias
+Es **obligatorio** crear un entorno virtual para instalar `gunicorn` y las dependencias de Flask para que PM2 pueda ejecutarlo:
+
+```bash
 cd reconocimiento_facial/reconocimientofacial
+
+# 1. Crear el entorno virtual llamado 'venv'
 python3 -m venv venv
+
+# 2. Activar el entorno virtual
 source venv/bin/activate
+
+# 3. Instalar las dependencias del proyecto
 pip install -r requirements.txt
+
+# 4. Instalar gunicorn (servidor web para Python)
 pip install gunicorn
 ```
 
-### 3. Gestionar con PM2
+### 4. Gestionar con PM2
 Dado que usas **PM2**, puedes usarlo para gestionar este backend de Python. Asegúrate de tener instalado PM2 globalmente:
 
 > [!IMPORTANT]
@@ -58,7 +72,7 @@ Dado que usas **PM2**, puedes usarlo para gestionar este backend de Python. Aseg
 
 ```bash
 # Asegúrate de estar en el directorio correcto
-cd /var/www/reconocimiento_facial/reconocimientofacial
+cd /var/www/pavastecnologia.com/html/reconocimiento_facial/reconocimientofacial
 
 # Iniciar con PM2
 pm2 start process.json
