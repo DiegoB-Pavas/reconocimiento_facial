@@ -1,0 +1,15 @@
+{
+  "apps": [
+    {
+      "name": "asistencia-facial-backend",
+      "script": "venv/bin/gunicorn",
+      "args": "--workers 3 --bind 0.0.0.0:5048 app:app",
+      "cwd": "/var/www/reconocimiento_facial/reconocimientofacial",
+      "interpreter": "none",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 5048
+      }
+    }
+  ]
+}
