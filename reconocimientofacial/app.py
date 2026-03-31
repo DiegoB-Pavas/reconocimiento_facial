@@ -13,7 +13,8 @@ from config import MYSQL_CONFIG, BASE_DIR, DATA_DIR, MODELS_DIR, TOTAL_FOTOS, FL
 from database import (
     get_connection, init_db, get_empleado_by_id, get_all_empleados,
     insert_entrenamiento, update_entrenamiento, get_entrenamientos_activos,
-    get_entrenamiento_by_empleado, get_asistencias, save_asistencia
+    get_entrenamiento_by_empleado, get_asistencias, save_asistencia,
+    delete_entrenamiento, get_entrenamiento_by_id
 )
 
 app = Flask(__name__)
@@ -371,6 +372,50 @@ def api_usuarios():
 def api_asistencias():
     asistencias = get_asistencias(50)  # Últimas 50 asistencias
     return jsonify(asistencias)
+
+
+@app.route('/api/entrenamiento/eliminar', methods=['DELETE'])
+@cross_origin()
+def api_eliminar_entrenamiento():
+    """Endpoint para eliminar un entrenamiento (registro BD y archivo .yml) por empleado ID"""
+    data = request.json
+    empleado_id = data.get('empleado_id', '').strip()
+    
+    if not empleado_id:
+        return jsonify({'error': 'Empleado ID requerido'}), 400
+    
+    # Verificar que el empleado existe
+    empleado = get_empleado_by_id(empleado_id)
+    if not empleado:
+        return jsonify({'error': 'Empleado no encontrado'}), 404
+    
+    # Obtener el entrenamiento activo del empleado
+    entrenamiento = get_entrenamiento_by_empleado(empleado_id)
+    if not entrenamiento:
+        return jsonify({'error': 'No se encontró entrenamiento para este empleado'}), 404
+    
+    entrenamiento_id = entrenamiento['fac_id']
+    
+    # Eliminar el registro de la base de datos
+    if not delete_entrenamiento(entrenamiento_id, empleado_id):
+        return jsonify({'error': 'Error al eliminar registro de base de datos'}), 500
+    
+    # Eliminar el archivo .yml si existe
+    modelo_path = entrenamiento.get('fac_ruta_modelo')
+    if modelo_path and os.path.exists(modelo_path):
+        try:
+            os.remove(modelo_path)
+            print(f"Archivo modelo eliminado: {modelo_path}")
+        except Exception as e:
+            print(f"Error eliminando archivo modelo: {e}")
+            # Continuamos aunque falle la eliminación del archivo
+    
+    return jsonify({
+        'status': 'ok',
+        'message': 'Entrenamiento eliminado correctamente',
+        'entrenamiento_id': entrenamiento_id,
+        'empleado_id': empleado_id
+    })
 
 
 if __name__ == '__main__':

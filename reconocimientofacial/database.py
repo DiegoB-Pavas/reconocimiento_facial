@@ -129,7 +129,7 @@ def save_or_update_entrenamiento(empleado_id, num_fotos, created_by=None):
             ))
             connection.commit()
             return entrenamiento_id
-            
+             
     except Error as e:
         print(f"Error en save_or_update_entrenamiento: {e}")
         return None
@@ -232,6 +232,54 @@ def get_entrenamiento_by_empleado(empleado_id):
             cursor.close()
             connection.close()
 
+def get_entrenamiento_by_id(entrenamiento_id):
+    """Obtiene el entrenamiento por su ID"""
+    connection = get_connection()
+    if connection is None:
+        return None
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+        query = "SELECT * FROM tbl_facial_training WHERE fac_id = %s"
+        cursor.execute(query, (entrenamiento_id,))
+        result = cursor.fetchone()
+        return result
+    except Error as e:
+        print(f"Error obteniendo entrenamiento por ID: {e}")
+        return None
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def delete_entrenamiento(entrenamiento_id, empleado_id=None):
+    """Elimina un registro de entrenamiento por su ID"""
+    connection = get_connection()
+    if connection is None:
+        return False
+
+    try:
+        cursor = connection.cursor()
+        
+        if empleado_id:
+            # Si se proporciona empleado_id, verificamos que coincida por seguridad
+            query = "DELETE FROM tbl_facial_training WHERE fac_id = %s AND fk_pem_id = %s"
+            cursor.execute(query, (entrenamiento_id, empleado_id))
+        else:
+            # Solo eliminamos por fac_id
+            query = "DELETE FROM tbl_facial_training WHERE fac_id = %s"
+            cursor.execute(query, (entrenamiento_id,))
+            
+        connection.commit()
+        return cursor.rowcount > 0
+    except Error as e:
+        print(f"Error eliminando entrenamiento: {e}")
+        return False
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
 # Funciones para asistencias (MySQL)
 def get_asistencias(limit=50):
     """Obtiene últimas asistencias desde tbl_attendances"""
@@ -241,12 +289,12 @@ def get_asistencias(limit=50):
             cursor = connection.cursor(dictionary=True)
             query = """
                 SELECT a.att_id AS id,
-                       a.pem_id AS empleado_id,
-                       e.pem_full_name AS nombre,
-                       a.att_timestamp AS timestamp,
-                       a.att_status AS status,
-                       a.att_source AS source,
-                       a.att_device_name AS device_name
+                        a.pem_id AS empleado_id,
+                        e.pem_full_name AS nombre,
+                        a.att_timestamp AS timestamp,
+                        a.att_status AS status,
+                        a.att_source AS source,
+                        a.att_device_name AS device_name
                 FROM tbl_attendances a
                 JOIN tbl_pay_employees e ON a.pem_id = e.pem_id
                 ORDER BY a.att_timestamp DESC
