@@ -8,6 +8,9 @@ venv/
 # Modelos (Git LFS no es necesario si se ignoran)
 reconocimientofacial/modelos/*.yml
 
+# Datos de entrenamiento
+reconocimientofacial/Data/
+
 # Logs y otros
 *.log
 .env

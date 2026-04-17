@@ -78,7 +78,8 @@ def get_all_empleados():
 
 # Funciones CRUD para entrenamientos faciales
 def save_or_update_entrenamiento(empleado_id, num_fotos, created_by=None):
-    """Inserta o actualiza un registro de entrenamiento para un empleado"""
+    """Inserta o actualiza un registro de entrenamiento para un empleado.
+    Siempre debe existir solo un registro por empleado."""
     connection = get_connection()
     if connection is None:
         return None
@@ -86,20 +87,30 @@ def save_or_update_entrenamiento(empleado_id, num_fotos, created_by=None):
     try:
         cursor = connection.cursor(dictionary=True)
         
-        # Verificar si ya existe un registro para este empleado
+        # Obtener todos los registros existentes para este empleado
         query_check = "SELECT fac_id FROM tbl_facial_training WHERE fk_pem_id = %s"
         cursor.execute(query_check, (empleado_id,))
-        existing = cursor.fetchone()
+        existing_records = cursor.fetchall()
 
-        if existing:
-            # Actualizar registro existente
-            entrenamiento_id = existing['fac_id']
+        if existing_records and len(existing_records) > 0:
+            # Ya existen registros, obtener el más reciente (si hay varios, usar el primero)
+            entrenamiento_id = existing_records[0]['fac_id']
+            
+            # Si hay más de un registro, eliminar los anteriores (dejar solo 1)
+            if len(existing_records) > 1:
+                for record in existing_records[1:]:
+                    delete_query = "DELETE FROM tbl_facial_training WHERE fac_id = %s"
+                    cursor.execute(delete_query, (record['fac_id'],))
+            
+            # Actualizar el registro existente a estado pendiente
             query_update = """
             UPDATE tbl_facial_training 
             SET fac_num_photos_captured = %s, 
                 fac_training_date = %s,
                 fac_state = %s,
-                fac_updated_by = %s
+                fac_updated_by = %s,
+                fac_ruta_modelo = NULL,
+                fac_precision = NULL
             WHERE fac_id = %s
             """
             cursor.execute(query_update, (
@@ -129,7 +140,7 @@ def save_or_update_entrenamiento(empleado_id, num_fotos, created_by=None):
             ))
             connection.commit()
             return entrenamiento_id
-             
+              
     except Error as e:
         print(f"Error en save_or_update_entrenamiento: {e}")
         return None
