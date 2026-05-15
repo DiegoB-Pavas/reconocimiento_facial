@@ -218,6 +218,31 @@ def get_entrenamientos_activos():
             cursor.close()
             connection.close()
 
+def get_empleados_pendientes_entrenamiento():
+    """Obtiene lista de empleado_id con entrenamiento pendiente y fotos en disco"""
+    connection = get_connection()
+    if connection is None:
+        return []
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+        query = """
+        SELECT ft.fk_pem_id
+        FROM tbl_facial_training ft
+        WHERE ft.fac_state = 'pendiente'
+        ORDER BY ft.fac_updated_at ASC
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return [r['fk_pem_id'] for r in results]
+    except Error as e:
+        print(f"Error obteniendo pendientes: {e}")
+        return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
 def get_entrenamiento_by_empleado(empleado_id):
     """Obtiene el último entrenamiento de un empleado"""
     connection = get_connection()
