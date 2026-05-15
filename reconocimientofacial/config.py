@@ -20,7 +20,7 @@ DATA_DIR = os.path.join(BASE_DIR, 'Data')
 MODELS_DIR = os.path.join(BASE_DIR, 'modelos')
 
 # Configuración del sistema
-TOTAL_FOTOS = 300  # Número máximo de fotos por usuario
+TOTAL_FOTOS = 30  # Número máximo de fotos por usuario
 
 # Configuración Flask
 FLASK_CONFIG = {
