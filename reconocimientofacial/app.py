@@ -38,7 +38,7 @@ if not init_db():
     exit(1)
 
 face_cascade = cv2.CascadeClassifier(
-    os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_default.xml'))
+    os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_alt2.xml'))
 eye_cascade = cv2.CascadeClassifier(
     os.path.join(cv2.data.haarcascades, 'haarcascade_eye.xml'))
 
@@ -55,7 +55,7 @@ def check_liveness(face_gray):
     """Anti-spoofing basico: analisis de textura con Laplacian.
     Fotos impresas o en pantalla tienden a tener varianza muy baja."""
     lap_var = cv2.Laplacian(face_gray, cv2.CV_64F).var()
-    return lap_var > 8, round(lap_var, 1)
+    return lap_var > 5, round(lap_var, 1)
 
 
 # ── API ───────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ def api_registrar_frame():
 
     frame = decode_image(data['image'])
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    faces = face_cascade.detectMultiScale(gray, 1.1, 3, minSize=(80, 80))
 
     if len(faces) == 0:
         return jsonify({'status': 'no_face'})
@@ -463,7 +463,7 @@ def api_reconocer():
     """Reconocimiento facial usando modelo global único con labels únicos"""
     frame = decode_image(request.json['image'])
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    faces = face_cascade.detectMultiScale(gray, 1.1, 3, minSize=(80, 80))
 
     labels_json_path = os.path.join(MODELS_DIR, 'labels.json')
     global_model_path = os.path.join(MODELS_DIR, 'modelo_global.yml')
@@ -502,8 +502,7 @@ def api_reconocer():
         # Convertir confidence a porcentaje (menor confidence = mayor confianza)
         confianza_pct = max(0, round(100 - confidence))
         
-        # Umbral: confianza >= 50% y confidence < 65
-        valido = confidence < 80 and confianza_pct >= 20
+        valido = confidence < 76 and confianza_pct >= 24
         
         if valido and str(label_id) in label_to_empleado:
             emp_data = label_to_empleado[str(label_id)]
