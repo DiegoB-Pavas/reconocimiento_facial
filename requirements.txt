@@ -1,12 +1,13 @@
+opencv-contrib-python>=4.10
 flask>=3.1
 flask-cors==4.0.0
 gunicorn==23.0.0
-opencv-contrib-python>=4.10
-imutils>=0.5.4
-
-# Base de datos
 mysql-connector-python>=9.0.0
-
-# Procesamiento de imágenes / reconocimiento
 numpy==1.26.4
 python-dotenv
+imutils>=0.5.4
+onnxruntime>=1.16.0
+torch>=2.0.0
+torchvision>=0.15.0
+insightface>=0.7.3
+waitress

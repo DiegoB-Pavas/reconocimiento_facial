@@ -1,133 +1,124 @@
 # Sistema de Asistencia Facial - Backend API
 
-Backend Flask para reconocimiento facial de alto rendimiento con integración MySQL y soporte para React frontend. Este proyecto funciona como una API REST pura para consumo desde aplicaciones modernas.
+Backend Flask para reconocimiento facial con **InsightFace** (embeddings 512-d) e integración MySQL. API REST pura para consumo desde frontend React.
 
 ## 🚀 Inicio Rápido (Local)
 
 ### 1. Instalar dependencias
-Se recomienda usar un entorno virtual:
+
 ```bash
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux
 pip install -r requirements.txt
 ```
 
 ### 2. Configurar MySQL
-- Crear base de datos `bdcsurhorario`.
-- Ejecutar el script `SQL_INIT.sql` en phpMyAdmin o MySQL Workbench.
-- Configurar credenciales en `config.py`.
+
+- Crear base de datos `bdiayccontrolasistencia`
+- Las tablas se manejan manualmente (ver `SQL_INIT.sql`)
+- Configurar credenciales en `.env`:
+
+```env
+DB_HOST=localhost
+DB_USER=usrpavas
+DB_PASSWORD=tu_password
+DB_NAME=bdiayccontrolasistencia
+```
 
 ### 3. Ejecutar aplicación
+
 ```bash
-cd reconocimientofacial
 python app.py
 ```
-La API estará disponible en: `http://localhost:5048`
+
+API disponible en: `http://localhost:5048`
 
 ---
 
-## 🌐 Despliegue en VPS (CentOS 9 Stream)
-
-Para desplegar este proyecto en un VPS con **CentOS 9 Stream**, sigue estos pasos:
+## 🌐 Despliegue en VPS (Hostinger)
 
 ### 1. Preparar el Entorno
-Actualiza el sistema e instala las dependencias necesarias de Python, compilación y OpenCV:
+
 ```bash
-sudo dnf update -y
-sudo dnf install python3 python3-devel gcc gcc-c++ -y
-sudo dnf install mesa-libGL glib2 -y
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-pip python3-venv git -y
 ```
 
-### 2. Clonar el repositorio
-Clona el repositorio en la carpeta de tu dominio web:
+### 2. Clonar repositorio
+
 ```bash
 cd /var/www/pavastecnologia.com/html
-git clone https://github.com/tu-usuario/reconocimiento_facial.git
+git clone https://github.com/tu-usuario/reconocimiento_facial_iayc.git
+cd reconocimiento_facial_iayc
 ```
 
-### 3. Configurar el Entorno Virtual y Dependencias
-Es **obligatorio** crear un entorno virtual para instalar `gunicorn` y las dependencias de Flask para que PM2 pueda ejecutarlo:
+### 3. Entorno virtual y dependencias
 
 ```bash
-cd reconocimiento_facial/reconocimientofacial
-
-# 1. Crear el entorno virtual llamado 'venv'
 python3 -m venv venv
-
-# 2. Activar el entorno virtual
 source venv/bin/activate
-
-# 3. Instalar las dependencias del proyecto
-pip install -r requirements.txt
-
-# 4. Instalar gunicorn (servidor web para Python)
-pip install gunicorn
+pip install --upgrade pip setuptools wheel
+pip install opencv-contrib-python==4.10.0.84
+pip install flask flask-cors gunicorn mysql-connector-python numpy python-dotenv
+pip install insightface
 ```
 
 ### 4. Gestionar con PM2
-Dado que usas **PM2**, puedes usarlo para gestionar este backend de Python. Asegúrate de tener instalado PM2 globalmente:
-
-> [!IMPORTANT]
-> El archivo `process.json` se encuentra dentro de la subcarpeta `reconocimientofacial/`. Debes estar en ese directorio antes de ejecutar PM2.
 
 ```bash
-# Asegúrate de estar en el directorio correcto
-cd /var/www/pavastecnologia.com/html/reconocimiento_facial/reconocimientofacial
-
-# Iniciar con PM2
 pm2 start process.json
-
-# Guardar el proceso para que arranque automáticamente al reiniciar el servidor
 pm2 save
 pm2 startup
 ```
 
-    location /asistenciafac-api/ {
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-        proxy_set_header X-NginX-Proxy true;
-        proxy_pass http://127.0.0.1:5048/api/;
-        proxy_redirect off;
-    }
+### 5. Proxy inverso Nginx
 
-Reinicia Nginx y asegúrate de que el firewall permita el tráfico HTTP/HTTPS:
-```bash
-sudo nginx -t
-sudo systemctl restart nginx
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --reload
+```nginx
+location /asistenciafac-api/ {
+    proxy_pass http://127.0.0.1:5048/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_redirect off;
+}
 ```
 
-> [!IMPORTANT]
-> En CentOS, es posible que **SELinux** bloquee las conexiones del proxy inverso. Si recibes un error 502, ejecuta:
-> `sudo setsebool -P httpd_can_network_connect 1`
+```bash
+sudo nginx -t && sudo systemctl restart nginx
+```
 
 ---
 
-## 🔗 API Endpoints (Para React)
+## 🔗 API Endpoints
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `POST` | `/api/registrar/frame` | Envía frame (base64) para capturar rostro. |
-| `POST` | `/api/registrar/finalizar` | Finaliza captura y crea/actualiza registro en BD. |
-| `POST` | `/api/entrenar` | Procesa fotos, genera `.yml` y limpia disco. |
-| `POST` | `/api/reconocer` | Prueba un frame contra todos los modelos cargados. |
-| `GET`  | `/api/usuarios` | Obtiene lista de usuarios y estado de entrenamiento. |
-| `GET`  | `/api/asistencias` | Obtiene historial de las últimas 50 asistencias. |
-
----
-
-## 🛡️ Características Pro
-- **Modelos Individuales**: Cada usuario tiene su propio archivo `.yml`, facilitando actualizaciones sin re-entrenar todo.
-- **Optimización de Almacenamiento**: Las fotos se eliminan automáticamente después de un entrenamiento exitoso.
-- **Detección de Vida (Liveness)**: Filtro básico para evitar suplantación con fotos impresas o pantallas.
-- **Upsert Inteligente**: Si un usuario repite el entrenamiento, se actualiza su registro actual en lugar de crear duplicados.
-
-## 🛠️ Requisitos del Sistema
-- **Python 3.10+**
-- **MySQL 8.0+**
-- **OpenCV Contrib** (`opencv-contrib-python`)
+| Método   | Ruta                                | Descripción                                      |
+| -------- | ----------------------------------- | ------------------------------------------------ |
+| `POST`   | `/api/registrar/frame`              | Captura frame (base64) para entrenamiento        |
+| `POST`   | `/api/registrar/finalizar`          | Finaliza captura y registra en BD                |
+| `POST`   | `/api/entrenar`                     | Extrae embeddings con InsightFace y guarda en BD |
+| `POST`   | `/api/reconocer`                    | Reconoce rostro por similitud coseno             |
+| `POST`   | `/api/asistencia`                   | Registra asistencia del empleado reconocido      |
+| `GET`    | `/api/usuarios`                     | Lista usuarios con estado de entrenamiento       |
+| `GET`    | `/api/asistencias`                  | Últimas 50 asistencias                           |
+| `POST`   | `/api/entrenar-global`              | Consulta estado global de embeddings             |
+| `GET`    | `/api/entrenamiento/estado`         | Estado del sistema                               |
+| `DELETE` | `/api/entrenamiento/eliminar`       | Elimina entrenamiento de un usuario              |
+| `POST`   | `/api/entrenamiento/reset-completo` | Reset total del sistema                          |
 
 ---
-Desarrollado para integración fluida con React y entornos de producción escalables.
+
+## 🛡️ Características
+
+- **InsightFace (buffalo_l)**: embeddings 512-d, precisión ~99%
+- **Cosine similarity**: matching robusto vs LBPH
+- **Embeddings en MySQL**: sin archivos .yml ni cache JSON
+- **Anti-spoofing**: detección de liveness por Laplacian
+- **Migración incluida**: `python -m services.migration` convierte datos LBPH antiguos
+
+## 🛠️ Requisitos
+
+- Python 3.9+
+- MySQL 8.0+
+- OpenCV Contrib (opencv-contrib-python)
+- InsightFace / ONNX Runtime
