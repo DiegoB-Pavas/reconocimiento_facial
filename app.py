@@ -32,11 +32,22 @@ app.config.update(FLASK_CONFIG)
 
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://localhost:3039", "https://pavastecnologia.com"],
-        "methods": ["GET", "POST", "PUT", "DELETE"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "origins": [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://localhost:3039",
+            "https://pavastecnologia.com",
+            "https://www.pavastecnologia.com"
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True,
+        "max_age": 3600
     }
 })
+
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
 
 if not init_db():
     print("ERROR: No se pudo conectar a la base de datos MySQL")
@@ -69,11 +80,29 @@ except Exception as e:
 
 
 def decode_image(b64):
+    if not b64:
+        raise ValueError("No image data provided")
     if ',' in b64:
         b64 = b64.split(',')[1]
-    data = base64.b64decode(b64)
+    try:
+        data = base64.b64decode(b64)
+    except Exception as e:
+        raise ValueError(f"Invalid base64 data: {e}")
     arr = np.frombuffer(data, np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    if img is None:
+        raise ValueError("Failed to decode image")
+    return img
+
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({'error': 'La imagen es demasiado grande. Maximo 10MB permitido.'}), 413
+
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({'error': 'Solicitud invalida'}), 400
 
 
 def check_liveness(face_gray, face_bgr=None, det_score=None):
@@ -94,7 +123,10 @@ def api_registrar_frame():
     empleado = get_empleado_by_id(empleado_id)
     if not empleado:
         return jsonify({'error': 'Empleado no encontrado'}), 404
-    frame = decode_image(data['image'])
+    try:
+        frame = decode_image(data['image'])
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     if len(faces) == 0:
@@ -348,7 +380,10 @@ def api_reconocer():
     if face_detector is None or embedding_storage is None:
         return jsonify({'error': 'InsightFace no esta disponible'}), 500
 
-    frame = decode_image(request.json['image'])
+    try:
+        frame = decode_image(request.json['image'])
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
 
     detections = face_detector.detect_and_extract(frame)
 
